@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
+#include <vector> 
 
 std::vector<std::string> splitBySemicolon(std::string in) {
   std::string val;
@@ -258,7 +259,6 @@ struct DownloadInfo *getDownloadInfo(uint64_t gid) {
   if (!dh) {
     return nullptr;
   }
-
   struct DownloadInfo *di = new DownloadInfo();
   di->status = dh->getStatus();
   di->totalLength = dh->getTotalLength();
@@ -273,9 +273,14 @@ struct DownloadInfo *getDownloadInfo(uint64_t gid) {
   di->infoHash = toCStr(dh->getInfoHash());
   di->metaInfo = parseMetaInfo(dh->getBtMetaInfo());
   di->files = parseFileData(dh);
-
+  di->errorCode = dh->getErrorCode();
+  std::vector<aria2::A2Gid> gids =  dh->getFollowedBy();
+  if (gids.size() != 0) {
+    di->followedByGid = gids[0];
+  } else {
+    di->followedByGid = 0;
+  }
   /* delete download handle */
   aria2::deleteDownloadHandle(dh);
-
   return di;
 }

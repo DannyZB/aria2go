@@ -192,7 +192,6 @@ func (a *Aria2) GetDownloadInfo(gid string) DownloadInfo {
 			AnnounceList: announceList,
 		}
 	}
-
 	return DownloadInfo{
 		Status:         int(ret.status),
 		TotalLength:    int64(ret.totalLength),
@@ -205,6 +204,8 @@ func (a *Aria2) GetDownloadInfo(gid string) DownloadInfo {
 		InfoHash:       infoHash,
 		MetaInfo:       metaInfo,
 		Files:          a.parseFiles(ret.files, ret.numFiles),
+		ErrorCode:      int(ret.errorCode),
+		FollowedByGid:  fmt.Sprintf("%x", uint64(ret.followedByGid)),
 	}
 }
 

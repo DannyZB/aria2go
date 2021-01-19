@@ -16,6 +16,8 @@ type DownloadInfo struct {
 	InfoHash       string
 	MetaInfo       MetaInfo
 	Files          []File
+	ErrorCode      int
+	FollowedByGid  string
 }
 
 // Type definition for BitTorrent meta information.

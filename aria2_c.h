@@ -46,6 +46,8 @@ struct DownloadInfo {
   const char *infoHash;
   struct MetaInfo *metaInfo;
   struct FileInfo *files;
+  int errorCode;
+  uint64_t followedByGid;
 };
 
 int init(uint64_t aria2goPointer, const char *options);
