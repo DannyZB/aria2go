@@ -290,8 +290,6 @@ func notifyEvent(ariagoPointer uint64, id uint64, event int) {
 		a.notifier.OnComplete(gid)
 	case onError:
 		a.notifier.OnError(gid)
-	case onBTComplete:
-		a.notifier.OnComplete(gid)
 	}
 }
 
