@@ -3,7 +3,7 @@
 package aria2go
 
 /*
- #cgo CXXFLAGS: -std=c++11 -I./aria2-lib/include
+ #cgo CXXFLAGS: -std=c++11 -I./aria2-lib/include -Werror -Wall
  #cgo LDFLAGS: -L./aria2-lib/lib
  #cgo LDFLAGS: -laria2 -lssh2 -lcrypto -lssl -lcares -lz
  #include <stdlib.h>
@@ -179,10 +179,11 @@ func (a *Aria2) GetDownloadInfo(gid string) DownloadInfo {
 
 	// convert info hash to hex string
 	infoHash := fmt.Sprintf("%x", []byte(C.GoString(ret.infoHash)))
-
+	C.free(unsafe.Pointer(ret.infoHash))
 	// retrieve BitTorrent meta information
 	var metaInfo = MetaInfo{}
 	mi := ret.metaInfo
+	defer C.free(unsafe.Pointer(mi))
 	if mi != nil {
 		announceList := strings.Split(C.GoString(mi.announceList), ";")
 		metaInfo = MetaInfo{
@@ -191,6 +192,9 @@ func (a *Aria2) GetDownloadInfo(gid string) DownloadInfo {
 			CreationUnix: int64(mi.creationUnix),
 			AnnounceList: announceList,
 		}
+		C.free(unsafe.Pointer(mi.name))
+		C.free(unsafe.Pointer(mi.comment))
+		C.free(unsafe.Pointer(mi.announceList))
 	}
 	return DownloadInfo{
 		Status:         int(ret.status),
@@ -260,6 +264,7 @@ func (a *Aria2) parseFiles(filesPointer *C.struct_FileInfo, length C.int) (files
 			Name:            C.GoString(f.name),
 			Selected:        bool(f.selected),
 		})
+		C.free(unsafe.Pointer(f.name))
 	}
 
 	// free c pointer resource

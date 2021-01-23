@@ -4,7 +4,6 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include <vector> 
 
 std::vector<std::string> splitBySemicolon(std::string in) {
   std::string val;
@@ -59,7 +58,7 @@ aria2::KeyVals toAria2Options(const char *options) {
     return aria2Options;
   }
 
-  for (int i = 0; i < o.size(); i += 2) {
+  for (int i = 0; i < (int)o.size(); i += 2) {
     std::string key = o[i];
     std::string val = o[i + 1];
     aria2Options.push_back(std::make_pair(key, val));
@@ -83,6 +82,7 @@ struct FileInfo *parseFileData(aria2::DownloadHandle *dh) {
     fi->selected = file.selected;
 
     allFiles[i] = *fi;
+    delete fi;
   }
   return allFiles;
 }
@@ -280,7 +280,12 @@ struct DownloadInfo *getDownloadInfo(uint64_t gid) {
   } else {
     di->followedByGid = 0;
   }
+  // std::cout << "status" << dh->getStatus() << std::endl;
+  // std::cout << "Error: " << dh->getErrorCode() << std::endl;
+  // std::cout << "Completed: " << dh->getCompletedLength() << std::endl;
+  // std::cout << "Total: " << dh->getTotalLength() << std::endl;
   /* delete download handle */
   aria2::deleteDownloadHandle(dh);
   return di;
 }
+
