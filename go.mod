@@ -1,4 +1,4 @@
-module github.com/coolerfall/aria2go
+module github.com/jaskaranSM/aria2go
 
 go 1.12
 
