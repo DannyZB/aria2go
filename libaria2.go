@@ -16,7 +16,10 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"unsafe"
+
+	_ "github.com/ianlancetaylor/cgosymbolizer"
 )
 
 // Type definition for lib aria2, it holds a notifier.
@@ -24,6 +27,7 @@ type Aria2 struct {
 	notifier             Notifier
 	shutdownNotification chan bool
 	shouldShutdown       bool
+	m_mutex              sync.Mutex
 }
 
 // Type definition of configuration for aria2.
@@ -64,6 +68,7 @@ func (a *Aria2) Shutdown() int {
 func (a *Aria2) Run() {
 	for {
 		if C.run() != 1 && a.shouldShutdown {
+			a.m_mutex.Unlock()
 			break
 		}
 	}
@@ -82,6 +87,8 @@ func (a *Aria2) SetNotifier(notifier Notifier) {
 // URIs (strings) pointing to the same resource. When adding BitTorrent Magnet
 // URIs, uris must have only one element and it should be BitTorrent Magnet URI.
 func (a *Aria2) AddUri(uri string, options Options) (gid string, err error) {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	cUri := C.CString(uri)
 	cOptions := C.CString(a.fromOptions(options))
 	defer C.free(unsafe.Pointer(cUri))
@@ -98,6 +105,8 @@ func (a *Aria2) AddUri(uri string, options Options) (gid string, err error) {
 // This will return gid and files in torrent file if add successfully.
 // User can choose specified files to download, change directory and so on.
 func (a *Aria2) AddTorrent(filepath string, options Options) (gid string, err error) {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	cFilepath := C.CString(filepath)
 	cOptions := C.CString(a.fromOptions(options))
 	defer C.free(unsafe.Pointer(cFilepath))
@@ -113,6 +122,8 @@ func (a *Aria2) AddTorrent(filepath string, options Options) (gid string, err er
 // ChangeOptions can change the options for aria2. See available options in
 // https://aria2.github.io/manual/en/html/aria2c.html#input-file.
 func (a *Aria2) ChangeOptions(gid string, options Options) error {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	cOptions := C.CString(a.fromOptions(options))
 	defer C.free(unsafe.Pointer(cOptions))
 
@@ -125,6 +136,8 @@ func (a *Aria2) ChangeOptions(gid string, options Options) error {
 
 // GetOptions gets all options for given gid.
 func (a *Aria2) GetOptions(gid string) Options {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	cOptions := C.getOptions(a.hexToGid(gid))
 	if cOptions == nil {
 		return make(Options)
@@ -137,6 +150,8 @@ func (a *Aria2) GetOptions(gid string) Options {
 // https://aria2.github.io/manual/en/html/aria2c.html#input-file except for
 // `checksum`, `index-out`, `out`, `pause` and `select-file`.
 func (a *Aria2) ChangeGlobalOptions(options Options) error {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	cOptions := C.CString(a.fromOptions(options))
 	defer C.free(unsafe.Pointer(cOptions))
 
@@ -149,28 +164,38 @@ func (a *Aria2) ChangeGlobalOptions(options Options) error {
 
 // GetGlobalOptions gets all global options of aria2.
 func (a *Aria2) GetGlobalOptions() Options {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	return a.toOptions(C.GoString(C.getGlobalOptions()))
 }
 
 // Pause pauses an active download for given gid. The status of the download
 // will become `DOWNLOAD_PAUSED`. Use `Resume` to restart download.
 func (a *Aria2) Pause(gid string) bool {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	return bool(C.pause(a.hexToGid(gid)))
 }
 
 // Resume resumes an paused download for given gid.
 func (a *Aria2) Resume(gid string) bool {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	return bool(C.resume(a.hexToGid(gid)))
 }
 
 // Remove removes download no matter what status it was. This will stop
 // downloading and stop seeding(for torrent).
 func (a *Aria2) Remove(gid string) bool {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	return bool(C.removeDownload(a.hexToGid(gid)))
 }
 
 // GetDownloadInfo gets current download information for given gid.
 func (a *Aria2) GetDownloadInfo(gid string) DownloadInfo {
+	a.m_mutex.Lock()
+	defer a.m_mutex.Unlock()
 	ret := C.getDownloadInfo(a.hexToGid(gid))
 	if ret == nil {
 		return DownloadInfo{}

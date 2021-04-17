@@ -4,6 +4,11 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
+#include <pthread.h>
+
+pthread_mutex_t access_mutex;
+
+
 
 std::vector<std::string> splitBySemicolon(std::string in) {
   std::string val;
@@ -167,7 +172,9 @@ int deinit() {
 uint64_t addUri(char *uri, const char *options) {
   std::vector<std::string> uris = {uri};
   aria2::A2Gid gid;
+  pthread_mutex_lock(&access_mutex);
   int ret = aria2::addUri(session, &gid, uris, toAria2Options(options));
+  pthread_mutex_unlock(&access_mutex);
   if (ret < 0) {
     return 0;
   }
@@ -180,8 +187,9 @@ uint64_t addUri(char *uri, const char *options) {
  */
 uint64_t addTorrent(char *fp, const char *options) {
   aria2::A2Gid gid;
-
+  pthread_mutex_lock(&access_mutex);
   int ret = aria2::addTorrent(session, &gid, fp, toAria2Options(options));
+  pthread_mutex_unlock(&access_mutex);
   if (ret < 0) {
     return 0;
   }
@@ -193,14 +201,19 @@ uint64_t addTorrent(char *fp, const char *options) {
  * Change aria2 options. See `changeOption` in aria2.
  */
 bool changeOptions(uint64_t gid, const char *options) {
-  return aria2::changeOption(session, gid, toAria2Options(options)) == 0;
+  pthread_mutex_lock(&access_mutex);
+  bool ret = aria2::changeOption(session, gid, toAria2Options(options)) == 0;
+  pthread_mutex_unlock(&access_mutex);
+  return ret;
 }
 
 /**
  * Get options for given gid. see `getOptions` in aria2.
  */
 const char *getOptions(uint64_t gid) {
+  pthread_mutex_lock(&access_mutex);
   aria2::DownloadHandle *dh = aria2::getDownloadHandle(session, gid);
+  pthread_mutex_unlock(&access_mutex);
   if (!dh) {
     return nullptr;
   }
@@ -212,14 +225,19 @@ const char *getOptions(uint64_t gid) {
  * Change global options. See `changeGlobalOption` in aria2.
  */
 bool changeGlobalOptions(const char *options) {
-  return aria2::changeGlobalOption(session, toAria2Options(options));
+  pthread_mutex_lock(&access_mutex);
+  bool ret = aria2::changeGlobalOption(session, toAria2Options(options));
+  pthread_mutex_unlock(&access_mutex);
+  return ret;
 }
 
 /**
  * Get global options. see `getGlobalOptions` in aria2.
  */
 const char *getGlobalOptions() {
+  pthread_mutex_lock(&access_mutex);
   aria2::KeyVals options = aria2::getGlobalOptions(session);
+  pthread_mutex_unlock(&access_mutex);
   return toAria2goOptions(options);
 }
 
@@ -232,19 +250,32 @@ int run() { return aria2::run(session, aria2::RUN_DEFAULT); }
  * Pause an active download with given gid. This will mark the download to
  * `DOWNLOAD_PAUSED`. See `resume`.
  */
-bool pause(uint64_t gid) { return aria2::pauseDownload(session, gid) == 0; }
+bool pause(uint64_t gid) {
+  pthread_mutex_lock(&access_mutex); 
+  bool ret = aria2::pauseDownload(session, gid) == 0;
+  pthread_mutex_unlock(&access_mutex); 
+  return ret;
+}
 
 /**
  * Resume a paused download with given gid. See `pause`.
  */
-bool resume(uint64_t gid) { return aria2::unpauseDownload(session, gid) == 0; }
+bool resume(uint64_t gid) {
+  pthread_mutex_lock(&access_mutex); 
+  bool ret = aria2::unpauseDownload(session, gid) == 0; 
+  pthread_mutex_unlock(&access_mutex);
+  return ret;
+}
 
 /**
  * Remove a download in queue with given gid. This will stop downloading and
  * seeding(for torrent).
  */
 bool removeDownload(uint64_t gid) {
-  return aria2::removeDownload(session, gid) == 0;
+  pthread_mutex_lock(&access_mutex);
+  bool ret = aria2::removeDownload(session, gid) == 0;
+  pthread_mutex_unlock(&access_mutex);
+  return ret;
 }
 
 /**
@@ -254,8 +285,9 @@ struct DownloadInfo *getDownloadInfo(uint64_t gid) {
   if (session == nullptr) {
     return nullptr;
   }
-
+  pthread_mutex_lock(&access_mutex);
   aria2::DownloadHandle *dh = aria2::getDownloadHandle(session, gid);
+  pthread_mutex_unlock(&access_mutex);
   if (!dh) {
     return nullptr;
   }
