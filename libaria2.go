@@ -68,7 +68,6 @@ func (a *Aria2) Shutdown() int {
 func (a *Aria2) Run() {
 	for {
 		if C.run() != 1 && a.shouldShutdown {
-			a.m_mutex.Unlock()
 			break
 		}
 	}
