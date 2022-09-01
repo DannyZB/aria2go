@@ -42,6 +42,8 @@ PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig/ \
     LD_LIBRARY_PATH=${PREFIX}/lib/ \
     CC="$C_COMPILER" \
     CXX="$CXX_COMPILER" \
+    CXXFLAGS="-fPIC" \
+    CFLAGS="-fPIC" \
     ./configure \
     --prefix=${PREFIX} \
     --without-sqlite3 \
