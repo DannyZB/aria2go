@@ -1,6 +1,6 @@
-module github.com/jaskaranSM/aria2go
+module github.com/dannyzb/aria2go
 
-go 1.12
+go 1.18
 
 require (
 	github.com/fatih/color v1.7.0 // indirect
