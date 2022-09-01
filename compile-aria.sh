@@ -7,10 +7,9 @@
 # * openSSL
 # * libssh2
 
-sudo yum install -y zlib-devel c-ares openssl-devel libssh2-devel
+sudo yum install -y zlib-devel c-ares-devel openssl-devel libssh2-devel
 
 # Compiler and path
-PREFIX=$PWD/aria2-lib
 C_COMPILER="gcc"
 CXX_COMPILER="g++"
 
@@ -39,7 +38,6 @@ fi
 tar jxvf aria2-${ARIA2_V}.tar.bz2
 cd aria2-${ARIA2_V}/
 PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig/ \
-    LD_LIBRARY_PATH=${PREFIX}/lib/ \
     CC="$C_COMPILER" \
     CXX="$CXX_COMPILER" \
     CXXFLAGS="-fPIC" \
@@ -59,15 +57,8 @@ PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig/ \
     --enable-shared=no \
     --enable-static=yes
 make -j`nproc`
-make install
+sudo make install
 cd ..
 
 # cleaning
 rm -rf aria2-${ARIA2_V}
-rm -rf ${PREFIX}/bin
-
-# generate files for c
-cd ${PREFIX}/../
-go tool cgo libaria2.go
-
-echo "Prepare finished!"
